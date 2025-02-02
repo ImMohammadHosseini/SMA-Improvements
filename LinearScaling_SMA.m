@@ -1,5 +1,5 @@
 
-function [Convergence_curve,Ave]=SMA(N,Max_iter,lb,ub,dim,fobj,Run_no)
+function [Convergence_curve,Ave]=LinearScaling_SMA(N,Max_iter,lb,ub,dim,fobj,Run_no)
 
 for irun=1:Run_no
 
@@ -24,31 +24,34 @@ for irun=1:Run_no
             X(i,:)=(X(i,:).*(~(Flag4ub+Flag4lb)))+ub.*Flag4ub+lb.*Flag4lb;
             AllFitness(i) = fobj(X(i,:));
         end
-	minFitness = min(AllFitness);
-	maxFitness = max(AllFitness);
-	scaledFitness = (AllFitness - minFitness) / (maxFitness - minFitness);
-	scaledFitness = max(0, min(1, scaledFitness));  % Ensure within [0, 1]
 
-        [SmellOrder,SmellIndex] = sort(scaledFitness);  
-        worstFitness = SmellOrder(N);
-        bestFitness = SmellOrder(1);
+        [SmellOrder,SmellIndex] = sort(AllFitness);  %Eq.(2.6)
+
+	    minFitness = min(AllFitness);
+	    maxFitness = max(AllFitness);
+	    scaledFitness = (AllFitness - minFitness) / (maxFitness - minFitness);
+	    scaledFitness = max(0, min(1, scaledFitness));  % Ensure within [0, 1]
+
+        [SmellOrderScaled,SmellIndexScaled] = sort(scaledFitness);  
+        worstFitness = SmellOrderScaled(N);
+        bestFitness = SmellOrderScaled(1);
 
         S=bestFitness-worstFitness+eps;  
 
         for i=1:N
             for j=1:dim
                 if i<=(N/2)  
-                    weight(SmellIndex(i),j) = 1+rand()*log10((bestFitness-SmellOrder(i))/(S)+1);
+                    weight(SmellIndexScaled(i),j) = 1+rand()*log10((bestFitness-SmellOrderScaled(i))/(S)+1);
                 else
-                    weight(SmellIndex(i),j) = 1-rand()*log10((bestFitness-SmellOrder(i))/(S)+1);
+                    weight(SmellIndexScaled(i),j) = 1-rand()*log10((bestFitness-SmellOrderScaled(i))/(S)+1);
                 end
             end
         end
 
 
-        if bestFitness < Destination_fitness
+        if minFitness < Destination_fitness
             bestPositions=X(SmellIndex(1),:);
-            Destination_fitness = bestFitness;
+            Destination_fitness = minFitness;
         end
 
         a = atanh(-(it/Max_iter)+1);   
@@ -80,9 +83,9 @@ for irun=1:Run_no
     end
 end
 Ave = mean(best_run);
-fprintf("\nSMA = %d",Ave);
-writeDataToFile(sprintf('SMA = %d', mean(best_run)), fullfile('Results', 'Numerical_results.txt'));
+fprintf("\nLinearScaling_SMA = %d",Ave);
+writeDataToFile(sprintf('LinearScaling_SMA = %d', mean(best_run)), fullfile('Results', 'Numerical_results.txt'));
 % save(fullfile('Results', 'SMA_Result.mat'), 'Convergence_curve');
-save(fullfile('Results', strrep(func2str(fobj), '@', ''), 'SMA_Result.mat'), 'Convergence_curve');
+save(fullfile('Results', strrep(func2str(fobj), '@', ''), 'LinearScaling_SMA_Result.mat'), 'Convergence_curve');
 
 end
