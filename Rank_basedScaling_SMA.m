@@ -1,5 +1,5 @@
 
-function [Convergence_curve,Ave]=SMA(N,Max_iter,lb,ub,dim,fobj,Run_no)
+function [Convergence_curve,Ave]=Rank_basedScaling_SMA(N,Max_iter,lb,ub,dim,fobj,Run_no)
 
 for irun=1:Run_no
 
@@ -27,17 +27,21 @@ for irun=1:Run_no
             X(i,:)=(X(i,:).*(~(Flag4ub+Flag4lb)))+ub.*Flag4ub+lb.*Flag4lb;
             AllFitness(i) = fobj(X(i,:));
         end
-	ranks = 1:N;  % Rank from 1 to N
-	scaledFitness = ranks / N;  % Scale based on rank
+        
+        [SmellOrder,SmellIndex] = sort(AllFitness);  %Eq.(2.6)
+        minFitness = min(AllFitness);
 
-	% Reassign scaled fitness values
-	scaledFitness = scaledFitness(sortedIdx);  % Apply rank scaling back to original order
+	    ranks = 1:N;  % Rank from 1 to N
+	    scaledFitness = ranks / N;  % Scale based on rank
 
-	% Use scaled fitness for the subsequent steps
+	    % Reassign scaled fitness values
+	    scaledFitness = scaledFitness(SmellIndex);  % Apply rank scaling back to original order
 
-        [SmellOrder,SmellIndex] = sort(scaledFitness);  %Eq.(2.6)
-        worstFitness = SmellOrder(N);
-        bestFitness = SmellOrder(1);
+	    % Use scaled fitness for the subsequent steps
+
+        [SmellOrderScaled,SmellIndexScaled] = sort(scaledFitness);  %Eq.(2.6)
+        worstFitness = SmellOrderScaled(N);
+        bestFitness = SmellOrderScaled(1);
 
         S=bestFitness-worstFitness+eps;  % plus eps to avoid denominator zero
 
@@ -45,17 +49,17 @@ for irun=1:Run_no
         for i=1:N
             for j=1:dim
                 if i<=(N/2)  %Eq.(2.5)
-                    weight(SmellIndex(i),j) = 1+rand()*log10((bestFitness-SmellOrder(i))/(S)+1);
+                    weight(SmellIndexScaled(i),j) = 1+rand()*log10((bestFitness-SmellOrderScaled(i))/(S)+1);
                 else
-                    weight(SmellIndex(i),j) = 1-rand()*log10((bestFitness-SmellOrder(i))/(S)+1);
+                    weight(SmellIndexScaled(i),j) = 1-rand()*log10((bestFitness-SmellOrderScaled(i))/(S)+1);
                 end
             end
         end
 
 
-        if bestFitness < Destination_fitness
+        if minFitness < Destination_fitness
             bestPositions=X(SmellIndex(1),:);
-            Destination_fitness = bestFitness;
+            Destination_fitness = minFitness;
         end
 
         a = atanh(-(it/Max_iter)+1);   %Eq.(2.4)
@@ -87,9 +91,9 @@ for irun=1:Run_no
     end
 end
 Ave = mean(best_run);
-fprintf("\nSMA = %d",Ave);
-writeDataToFile(sprintf('SMA = %d', mean(best_run)), fullfile('Results', 'Numerical_results.txt'));
+fprintf("\nRank_basedScaling_SMA = %d",Ave);
+writeDataToFile(sprintf('Rank_basedScaling_SMA = %d', mean(best_run)), fullfile('Results', 'Numerical_results.txt'));
 % save(fullfile('Results', 'SMA_Result.mat'), 'Convergence_curve');
-save(fullfile('Results', strrep(func2str(fobj), '@', ''), 'SMA_Result.mat'), 'Convergence_curve');
+save(fullfile('Results', strrep(func2str(fobj), '@', ''), 'Rank_basedScaling_SMA_Result.mat'), 'Convergence_curve');
 
 end
