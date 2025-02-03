@@ -1,8 +1,8 @@
 
 function [Convergence_curve,Ave]=SMA_with_tournament(N,Max_iter,lb,ub,dim,fobj,Run_no)
 
+tournament_size=6;
 for irun=1:Run_no
-
 
     bestPositions=zeros(1,dim);
     Destination_fitness=inf;
@@ -27,7 +27,7 @@ for irun=1:Run_no
             X(i,:)=(X(i,:).*(~(Flag4ub+Flag4lb)))+ub.*Flag4ub+lb.*Flag4lb;
             AllFitness(i) = fobj(X(i,:));
         end
-	selected = tournament_selection(AllFitness, N, tournament_size);
+        selected = tournament_selection(AllFitness, N, tournament_size);
         [SmellOrder,SmellIndex] = sort(AllFitness(selected));  %Eq.(2.6)
         worstFitness = SmellOrder(N);
         bestFitness = SmellOrder(1);
@@ -80,9 +80,9 @@ for irun=1:Run_no
     end
 end
 Ave = mean(best_run);
-fprintf("\nSMA = %d",Ave);
-writeDataToFile(sprintf('SMA = %d', mean(best_run)), fullfile('Results', 'Numerical_results.txt'));
+fprintf("\nSMA_with_tournament = %d",Ave);
+writeDataToFile(sprintf('SMA_with_tournament = %d', mean(best_run)), fullfile('Results', 'Numerical_results.txt'));
 % save(fullfile('Results', 'SMA_Result.mat'), 'Convergence_curve');
-save(fullfile('Results', strrep(func2str(fobj), '@', ''), 'SMA_Result.mat'), 'Convergence_curve');
+save(fullfile('Results', strrep(func2str(fobj), '@', ''), 'SMA_with_tournament_Result.mat'), 'Convergence_curve');
 
 end

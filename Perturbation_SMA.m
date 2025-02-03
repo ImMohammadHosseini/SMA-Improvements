@@ -1,5 +1,5 @@
 
-function [Convergence_curve,Ave]=ExponentialScaling_SMA(N,Max_iter,lb,ub,dim,fobj,Run_no)
+function [Convergence_curve,Ave]=Perturbation_SMA(N,Max_iter,lb,ub,dim,fobj,Run_no)
 
 for irun=1:Run_no
 
@@ -27,15 +27,10 @@ for irun=1:Run_no
             X(i,:)=(X(i,:).*(~(Flag4ub+Flag4lb)))+ub.*Flag4ub+lb.*Flag4lb;
             AllFitness(i) = fobj(X(i,:));
         end
-	    
-        [SmellOrder,SmellIndex] = sort(AllFitness);  %Eq.(2.6)
-        minFitness = min(AllFitness);
-	    maxFitness = max(AllFitness);
-	    scaledFitness = (exp(AllFitness) - 1) / (exp(maxFitness) - 1);
 
-        [SmellOrderScaled,SmellIndexScaled] = sort(scaledFitness);  %Eq.(2.6)
-        worstFitness = SmellOrderScaled(N);
-        bestFitness = SmellOrderScaled(1);
+        [SmellOrder,SmellIndex] = sort(AllFitness);  %Eq.(2.6)
+        worstFitness = SmellOrder(N);
+        bestFitness = SmellOrder(1);
 
         S=bestFitness-worstFitness+eps;  % plus eps to avoid denominator zero
 
@@ -43,17 +38,27 @@ for irun=1:Run_no
         for i=1:N
             for j=1:dim
                 if i<=(N/2)  %Eq.(2.5)
-                    weight(SmellIndexScaled(i),j) = 1+rand()*log10((bestFitness-SmellOrderScaled(i))/(S)+1);
+                    weight(SmellIndex(i),j) = 1+rand()*log10((bestFitness-SmellOrder(i))/(S)+1);
                 else
-                    weight(SmellIndexScaled(i),j) = 1-rand()*log10((bestFitness-SmellOrderScaled(i))/(S)+1);
+                    weight(SmellIndex(i),j) = 1-rand()*log10((bestFitness-SmellOrder(i))/(S)+1);
                 end
             end
         end
+	
+	perturbation_rate = 0.1;  % Mutation rate
+        for i = 1:N
+            if rand < perturbation_rate
+                perturbation_strength = 0.1;  % perturbation strength
+                perturbation = perturbation_strength * (rand(1, dim) - 0.5);  % Random perturbation
+                X(i,:) = X(i,:) + perturbation;  % Apply mutation
+                X(i,:) = max(min(X(i,:), ub), lb);  % Ensure within bounds
+            end
+	end
 
 
-        if minFitness < Destination_fitness
+        if bestFitness < Destination_fitness
             bestPositions=X(SmellIndex(1),:);
-            Destination_fitness = minFitness;
+            Destination_fitness = bestFitness;
         end
 
         a = atanh(-(it/Max_iter)+1);   %Eq.(2.4)
@@ -85,9 +90,9 @@ for irun=1:Run_no
     end
 end
 Ave = mean(best_run);
-fprintf("\nExponentialScaling_SMA = %d",Ave);
-writeDataToFile(sprintf('ExponentialScaling_SMA = %d', mean(best_run)), fullfile('Results', 'Numerical_results.txt'));
+fprintf("\nPerturbation_SMA = %d",Ave);
+writeDataToFile(sprintf('Perturbation_SMA = %d', mean(best_run)), fullfile('Results', 'Numerical_results.txt'));
 % save(fullfile('Results', 'SMA_Result.mat'), 'Convergence_curve');
-save(fullfile('Results', strrep(func2str(fobj), '@', ''), 'ExponentialScaling_SMA_Result.mat'), 'Convergence_curve');
+save(fullfile('Results', strrep(func2str(fobj), '@', ''), 'Perturbation_SMA_Result.mat'), 'Convergence_curve');
 
 end
